@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	ut "github.com/fairyhunter13/universal-translator"
 	"html/template"
 	"log"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 	"github.com/go-playground/locales/fr"
 	"github.com/go-playground/pure/v5"
 	"github.com/go-playground/pure/v5/_examples/middleware/logging-recovery"
-	"github.com/go-playground/universal-translator"
 )
 
 var (

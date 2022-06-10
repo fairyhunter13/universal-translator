@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
+	ut "github.com/fairyhunter13/universal-translator"
 
 	"github.com/go-playground/locales"
 	"github.com/go-playground/locales/en"
 	"github.com/go-playground/locales/en_CA"
 	"github.com/go-playground/locales/fr"
 	"github.com/go-playground/locales/nl"
-	"github.com/go-playground/universal-translator"
 )
 
 // only one instance as translators within are shared + goroutine safe
