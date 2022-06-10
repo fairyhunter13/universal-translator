@@ -1,4 +1,4 @@
-module github.com/go-playground/universal-translator
+module github.com/fairyhunter13/universal-translator
 
 go 1.13
 
