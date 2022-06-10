@@ -2,6 +2,7 @@ package ut
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -92,6 +93,25 @@ func newTranslator(trans locales.Translator) Translator {
 	}
 }
 
+const (
+	openBracket  = '{'
+	closeBracket = '}'
+)
+
+func (t *translator) isValidText(text string) bool {
+	var numOpenBrackets int
+	for _, charText := range text {
+		switch charText {
+		case openBracket:
+			numOpenBrackets++
+		case closeBracket:
+			numOpenBrackets--
+		}
+	}
+
+	return numOpenBrackets == 0
+}
+
 // Add adds a normal translation for a particular language/locale
 // {#} is the only replacement type accepted and are ad infinitum
 // eg. one: '{0} day left' other: '{0} days left'
@@ -101,30 +121,13 @@ func (t *translator) Add(key interface{}, text string, override bool) error {
 		return &ErrConflictingTranslation{locale: t.Locale(), key: key, text: text}
 	}
 
-	lb := strings.Count(text, "{")
-	rb := strings.Count(text, "}")
-
-	if lb != rb {
+	if !t.isValidText(text) {
 		return &ErrMissingBracket{locale: t.Locale(), key: key, text: text}
 	}
 
 	trans := &transText{
 		text: text,
 	}
-
-	var idx int
-
-	for i := 0; i < lb; i++ {
-		s := "{" + strconv.Itoa(i) + "}"
-		idx = strings.Index(text, s)
-		if idx == -1 {
-			return &ErrBadParamSyntax{locale: t.Locale(), param: s, key: key, text: text}
-		}
-
-		trans.indexes = append(trans.indexes, idx)
-		trans.indexes = append(trans.indexes, idx+len(s))
-	}
-
 	t.translations[key] = trans
 
 	return nil
@@ -293,6 +296,10 @@ func (t *translator) AddRange(key interface{}, text string, rule locales.PluralR
 	return nil
 }
 
+var (
+	regexMatchDigitBrackets = regexp.MustCompile(`{(\d+)}`)
+)
+
 // T creates the translation for the locale given the 'key' and params passed in
 func (t *translator) T(key interface{}, params ...string) (string, error) {
 
@@ -301,22 +308,16 @@ func (t *translator) T(key interface{}, params ...string) (string, error) {
 		return unknownTranslation, ErrUnknowTranslation
 	}
 
-	b := make([]byte, 0, 64)
-
-	var start, end, count int
-
-	for i := 0; i < len(trans.indexes); i++ {
-		end = trans.indexes[i]
-		b = append(b, trans.text[start:end]...)
-		b = append(b, params[count]...)
-		i++
-		start = trans.indexes[i]
-		count++
+	var mapParams map[string]string
+	for idx, param := range params {
+		mapParams[strconv.Itoa(idx)] = param
 	}
 
-	b = append(b, trans.text[start:]...)
+	result := regexMatchDigitBrackets.ReplaceAllStringFunc(trans.text, func(s string) string {
+		return mapParams[s]
+	})
 
-	return string(b), nil
+	return result, nil
 }
 
 // C creates the cardinal translation for the locale given the 'key', 'num' and 'digit' arguments and param passed in
